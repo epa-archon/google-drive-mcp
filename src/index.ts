@@ -576,7 +576,12 @@ interface HttpSession {
  */
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
-function createHttpApp(host: string) {
+interface CreateHttpAppOptions {
+  sessionIdleTimeoutMs?: number;
+}
+
+function createHttpApp(host: string, options?: CreateHttpAppOptions) {
+  const idleTimeoutMs = options?.sessionIdleTimeoutMs ?? SESSION_IDLE_TIMEOUT_MS;
   const app = createMcpExpressApp({ host });
   const sessions = new Map<string, HttpSession>();
   const sessionTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -593,7 +598,7 @@ function createHttpApp(host: string) {
         sessions.delete(sid);
       }
       sessionTimers.delete(sid);
-    }, SESSION_IDLE_TIMEOUT_MS));
+    }, idleTimeoutMs));
   }
 
   function clearSessionTimer(sid: string) {
