@@ -1,42 +1,34 @@
-# Use Node.js LTS
 FROM node:20-slim
 
 WORKDIR /app
 
-# Copia tudo (package.json, src, scripts, tsconfig.json etc.)
+# Copia todo o código + os dois ficheiros de autenticação
 COPY . .
 
-# Instala TODAS as dependências (incluindo devDependencies para fazer o build)
+# Instala todas as dependências (incluindo dev para fazer build)
 RUN npm ci --include=dev
 
-# Executa o build completo (typecheck + scripts/build.js)
+# Faz o build
 RUN npm run build
 
-# Remove as devDependencies para deixar a imagem leve
+# Remove devDependencies para deixar leve
 RUN npm ci --omit=dev --ignore-scripts
 
-# Diretório de configuração (onde vão ficar os tokens)
+# Cria pasta de config e copia os ficheiros para lá
 RUN mkdir -p /config
+COPY gcp-oauth.keys.json /config/gcp-oauth.keys.json
+COPY tokens.json /config/tokens.json
 
+# Protege os ficheiros (só o owner pode ler)
+RUN chmod 600 /config/gcp-oauth.keys.json /config/tokens.json
+
+# Variáveis de ambiente
 ENV NODE_ENV=production
 ENV GOOGLE_DRIVE_OAUTH_CREDENTIALS=/config/gcp-oauth.keys.json
 ENV GOOGLE_DRIVE_MCP_TOKEN_PATH=/config/tokens.json
-
-RUN chmod +x dist/index.js
-
-# Roda como usuário não-root por segurança
-USER node
-
-ENTRYPOINT ["node", "dist/index.js"]
-
-# Configuração para servidor HTTP + autenticação web
 ENV MCP_TRANSPORT=http
 ENV MCP_HTTP_HOST=0.0.0.0
 ENV MCP_HTTP_PORT=3000
-
-# Caminhos dos ficheiros (já tens no volume)
-ENV GOOGLE_DRIVE_OAUTH_CREDENTIALS=/config/gcp-oauth.keys.json
-ENV GOOGLE_DRIVE_MCP_TOKEN_PATH=/config/tokens.json
 
 EXPOSE 3000
 
