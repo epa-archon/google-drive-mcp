@@ -28,3 +28,19 @@ RUN chmod +x dist/index.js
 USER node
 
 ENTRYPOINT ["node", "dist/index.js"]
+
+# Configuração para servidor HTTP + autenticação web
+ENV MCP_TRANSPORT=http
+ENV MCP_HTTP_HOST=0.0.0.0
+ENV MCP_HTTP_PORT=3000
+
+# Caminhos dos ficheiros (já tens no volume)
+ENV GOOGLE_DRIVE_OAUTH_CREDENTIALS=/config/gcp-oauth.keys.json
+ENV GOOGLE_DRIVE_MCP_TOKEN_PATH=/config/tokens.json
+
+EXPOSE 3000
+
+USER node
+
+ENTRYPOINT ["node", "dist/index.js"]
+CMD ["start", "--transport", "http", "--host", "0.0.0.0", "--port", "3000"]
